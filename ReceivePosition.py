@@ -11,7 +11,6 @@ from typing import Optional, List
 from collections import deque
 
 import numpy as np
-import pandas as pd
 import PIL.ImageQt
 import pyqtgraph as pg
 
@@ -23,6 +22,7 @@ try:
     from coordinates import Coordinate, Position
     from nmea_validator import NMEAValidator
     from gps_data_model import GPSDataModel, GPSPosition
+    from gps_data_csv_storage import GPSDataCSVStorage
     import bert_utils.helper_udp
     import bert_utils.helper_maps
 except ImportError as e:
@@ -218,6 +218,10 @@ class ReceiveNmea(QtWidgets.QMainWindow):
         self.gps_model = GPSDataModel(max_positions=max_positions)
         self.gps_model.register_observer(self.on_model_updated)
 
+        # Initialize CSV storage
+        output_dir = self.config.get('data.output_dir', 'config')
+        self.csv_storage = GPSDataCSVStorage(output_dir=output_dir)
+
         # Initialize UI
         self.init_ui()
 
@@ -293,7 +297,7 @@ class ReceiveNmea(QtWidgets.QMainWindow):
     def init_network(self) -> None:
         """Initialize network receiver."""
         try:
-            recv_port = self.config.get('network.receive_port', 19711)
+            recv_port = self.config.get('network.receive_port', 19710)
             self.sock = bert_utils.helper_udp.UDPSocketClass(recv_port=recv_port)
             self.sock.udp_recv_data.connect(self.on_receive_nmea)
             logger.info(f"Listening on port {recv_port}")
@@ -446,53 +450,47 @@ class ReceiveNmea(QtWidgets.QMainWindow):
                 )
                 return
 
-            # Prepare data for export
-            data = {
-                'Timestamp': [p.timestamp.isoformat() for p in positions],
-                'Latitude': [p.latitude for p in positions],
-                'Longitude': [p.longitude for p in positions],
-                'Altitude (m)': [p.altitude for p in positions],
-                'Speed (m/s)': [p.speed if p.speed is not None else '' for p in positions],
-                'Satellites': [p.satellites if p.satellites is not None else '' for p in positions],
-                'Quality': [p.quality if p.quality is not None else '' for p in positions]
-            }
-
-            df = pd.DataFrame(data)
+            # Prepare data for export as list of dicts
+            data = []
+            for p in positions:
+                data.append({
+                    'timestamp': p.timestamp.isoformat(),
+                    'latitude': p.latitude,
+                    'longitude': p.longitude,
+                    'altitude': p.altitude,
+                    'speed': p.speed if p.speed is not None else '',
+                    'course': p.course if p.course is not None else '',
+                    'satellites': p.satellites if p.satellites is not None else '',
+                    'quality': p.quality if p.quality is not None else ''
+                })
 
             # Determine filename
-            output_dir = self.config.get('data.output_dir', 'config')
             base_filename = self.config.get('data.default_filename',
-                                            'car_position_nmea_0183.xlsx')
-            filename = os.path.join(output_dir, base_filename)
+                                            'gps_positions.csv')
+            filename = base_filename
 
             # Handle append mode
-            if self.save_checkbox.isChecked() and os.path.exists(filename):
-                try:
-                    df_old = pd.read_excel(filename, engine='openpyxl')
-                    df = pd.concat([df_old, df], ignore_index=True)
-                    logger.info(f"Appending to existing file: {filename}")
-                except Exception as e:
-                    logger.error(f"Error reading existing file: {e}")
+            if self.save_checkbox.isChecked():
+                filepath = self.csv_storage.append_positions(data, filename)
+                logger.info(f"Appended {len(positions)} positions to: {filepath}")
             else:
                 # Create new filename if file exists
-                if os.path.exists(filename):
+                output_dir = self.config.get('data.output_dir', 'config')
+                full_path = os.path.join(output_dir, filename)
+
+                if os.path.exists(full_path):
                     base, ext = os.path.splitext(filename)
                     counter = 1
-                    while os.path.exists(filename):
+                    while os.path.exists(os.path.join(output_dir, filename)):
                         filename = f"{base}_{counter}{ext}"
                         counter += 1
 
-            # Ensure output directory exists
-            os.makedirs(output_dir, exist_ok=True)
-
-            # Save to Excel
-            df.to_excel(filename, index=False, engine='openpyxl')
-
-            logger.info(f"Data saved to: {filename}")
+                filepath = self.csv_storage.save_positions(data, filename)
+                logger.info(f"Saved {len(positions)} positions to: {filepath}")
 
             QtWidgets.QMessageBox.information(
                 self, "Success",
-                f"Data saved successfully to:\n{filename}\n\n"
+                f"Data saved successfully to:\n{filepath}\n\n"
                 f"{len(positions)} positions saved"
             )
 

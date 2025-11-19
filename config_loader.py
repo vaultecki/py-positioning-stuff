@@ -1,42 +1,26 @@
-"""
-Configuration management module for GPS Position System.
-Provides centralized access to configuration parameters.
-"""
-
-import yaml
+import json
 import logging
 from pathlib import Path
 from typing import Any, Optional
-
 
 class ConfigurationError(Exception):
     """Raised when configuration is invalid or missing."""
     pass
 
-
 class Config:
-    """
-    Singleton configuration manager.
-
-    Loads and provides access to configuration parameters from YAML file.
-    Supports nested configuration access via dot notation.
-
-    Example:
-        >>> config = Config()
-        >>> port = config.get('network.udp_port', default=19711)
-    """
-
+    """Singleton configuration manager for JSON files."""
+    
     _instance = None
     _config_data = None
 
-    def __new__(cls, config_path: str = "config.yaml"):
+    def __new__(cls, config_path: str = "config.json"):
         if cls._instance is None:
             cls._instance = super(Config, cls).__new__(cls)
             cls._instance._load_config(config_path)
         return cls._instance
 
     def _load_config(self, config_path: str) -> None:
-        """Load configuration from YAML file."""
+        """Load configuration from JSON file."""
         config_file = Path(config_path)
 
         if not config_file.exists():
@@ -46,28 +30,15 @@ class Config:
 
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
-                self._config_data = yaml.safe_load(f)
+                self._config_data = json.load(f)
                 logging.info(f"Configuration loaded from {config_path}")
-        except yaml.YAMLError as e:
-            raise ConfigurationError(f"Error parsing config file: {e}")
+        except json.JSONDecodeError as e:
+            raise ConfigurationError(f"Error parsing JSON config: {e}")
         except Exception as e:
             raise ConfigurationError(f"Error loading config file: {e}")
 
     def get(self, path: str, default: Any = None) -> Any:
-        """
-        Get configuration value using dot notation.
-
-        Args:
-            path: Dot-separated path to config value (e.g., 'network.udp_port')
-            default: Default value if path not found
-
-        Returns:
-            Configuration value or default
-
-        Example:
-            >>> config.get('network.udp_port', 19711)
-            19711
-        """
+        """Get configuration value using dot notation."""
         if self._config_data is None:
             return default
 
@@ -85,18 +56,9 @@ class Config:
         return value
 
     def get_section(self, section: str) -> dict:
-        """
-        Get entire configuration section.
-
-        Args:
-            section: Top-level section name
-
-        Returns:
-            Dictionary with section configuration
-        """
+        """Get entire configuration section."""
         if self._config_data is None:
             return {}
-
         return self._config_data.get(section, {})
 
     def _get_default_config(self) -> dict:
@@ -126,25 +88,12 @@ class Config:
                 'map_widget_height': 300
             },
             'logging': {
-                'level': 'INFO',
-                'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                'level': 'INFO'
             }
         }
 
-    def reload(self, config_path: str = "config.yaml") -> None:
-        """Reload configuration from file."""
-        self._load_config(config_path)
-
     def validate(self) -> bool:
-        """
-        Validate configuration for required fields and valid values.
-
-        Returns:
-            True if configuration is valid
-
-        Raises:
-            ConfigurationError: If configuration is invalid
-        """
+        """Validate configuration for required fields."""
         required_fields = [
             'network.udp_port',
             'network.receive_port',
@@ -161,7 +110,6 @@ class Config:
 
         if not (0 < udp_port < 65536):
             raise ConfigurationError(f"Invalid UDP port: {udp_port}")
-
         if not (0 < recv_port < 65536):
             raise ConfigurationError(f"Invalid receive port: {recv_port}")
 
@@ -171,30 +119,3 @@ class Config:
             raise ConfigurationError(f"Invalid map zoom level: {zoom}")
 
         return True
-
-
-# Convenience function for direct access
-_config_instance = None
-
-
-def get_config() -> Config:
-    """Get global configuration instance."""
-    global _config_instance
-    if _config_instance is None:
-        _config_instance = Config()
-    return _config_instance
-
-
-if __name__ == "__main__":
-    # Test configuration loading
-    config = Config()
-
-    print("Network Configuration:")
-    print(f"  UDP Port: {config.get('network.udp_port')}")
-    print(f"  Receive Port: {config.get('network.receive_port')}")
-
-    print("\nGPS Configuration:")
-    print(f"  Data File: {config.get('gps.data_file')}")
-    print(f"  Max Positions: {config.get('gps.max_stored_positions')}")
-
-    print("\nValidation:", "PASSED" if config.validate() else "FAILED")

@@ -1,43 +1,37 @@
 # GPS Position System Requirements
 # Python 3.8+
 
-# Core dependencies
+# Core Data Processing
 numpy==1.24.3
 scipy==1.10.1
 pandas==2.0.3
-openpyxl==3.1.2
 
-# NMEA parsing
-pynmea2==1.19.0
-
-# GUI framework
+# GUI & Visualization
 PyQt6==6.5.2
 pyqtgraph==0.13.3
-
-# Image processing
 Pillow==10.0.0
+
+# Network I/O
 requests==2.31.0
 
-# Configuration
-PyYAML==6.0.1
+# NMEA Parsing
+pynmea2==1.19.0
+
+# CLI Tools
+click==8.1.7
 
 # Testing
 pytest==7.4.0
 pytest-cov==4.1.0
+pytest-asyncio==0.21.1
 pytest-mock==3.11.1
 
-# Code quality
+# Code Quality & Formatting
 black==23.7.0
 flake8==6.1.0
 mypy==1.5.1
 pylint==2.17.5
 
-# Optional: Signal/Slot (if not using PyQt signals)
-# PySignal==1.1.1
-
-# Development tools
+# Development & Utilities
 ipython==8.14.0
 jupyter==1.0.0
-
-# Logging
-structlog==23.1.0

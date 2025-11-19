@@ -1,408 +1,548 @@
-# GPS Position System - Improved Version
+# GPS Position System - Production Ready
 
-Ein verbessertes, produktionsreifes GPS-Positions-System mit robuster Fehlerbehandlung, MVC-Architektur und umfassenden Tests.
+A comprehensive GPS position tracking system with robust error handling, MVC architecture, async I/O, and extensive monitoring capabilities.
 
-## 🎯 Überblick
+## 🎯 Overview
 
-Das System besteht aus mehreren Komponenten zur Erfassung, Übertragung und Visualisierung von GPS-Daten:
+The system consists of multiple interconnected components for acquiring, transmitting, storing, and visualizing GPS data:
 
-- **SendPosition**: Sendet GPS-Positionen aus MATLAB-Dateien als NMEA-Nachrichten via UDP
-- **ReceivePosition**: Empfängt, validiert und visualisiert GPS-Daten mit PyQt6
-- **Koordinaten-System**: Einheitliche Verwaltung verschiedener Koordinatenformate
-- **NMEA-Validator**: Robuste Validierung und Parsing von NMEA-Sätzen
-- **GPS-Datenmodell**: Thread-sichere Datenverwaltung mit Observer-Pattern
+- **SendPosition**: Streams GPS positions from MATLAB files as NMEA sentences via UDP
+- **ReceivePosition**: Receives, validates, and visualizes GPS data with PyQt6 GUI
+- **Async Network Stack**: Non-blocking UDP I/O using asyncio
+- **Resilient Communication**: Circuit breaker pattern with exponential backoff retry logic
+- **CSV Storage**: Efficient position data persistence with Pandas
+- **Performance Metrics**: Real-time system monitoring without external dependencies
+- **Structured Logging**: JSON-based logging with contextual support
+- **CLI Tools**: Command-line interface for recording, filtering, and managing GPS data
+- **Map Provider Abstraction**: Pluggable architecture for multiple map tile servers
 
-## 🚀 Neue Features
+## ✨ Key Features
 
-### ✨ Hauptverbesserungen
+### Architecture
+- **MVC Pattern**: Clean separation of Model, View, and Controller
+- **Thread-Safe**: Concurrent access with proper locking mechanisms
+- **Async/Await**: Non-blocking network I/O for better scalability
+- **Configuration Management**: Centralized JSON-based configuration
+- **Plugin System**: Extensible map providers and custom modules
 
-1. **Thread-Sicherheit**: Alle GUI-Updates erfolgen über Qt-Signals im Main-Thread
-2. **Robuste Fehlerbehandlung**: Umfassende Validierung und Exception-Handling
-3. **MVC-Architektur**: Klare Trennung von Model, View und Controller
-4. **Einheitliche Koordinaten**: Konsistente Koordinatenumrechnung mit Validierung
-5. **Konfigurationsverwaltung**: Zentralisierte Konfiguration via YAML
-6. **NMEA-Validierung**: Checksummen-Prüfung und Format-Validierung
-7. **Performance-Optimierung**: Deque-basierte Datenspeicherung mit Größenlimit
-8. **Kartenmanagement**: Intelligentes Caching und Update-Throttling
-9. **Umfassende Tests**: Pytest-basierte Test-Suite mit >80% Coverage
-10. **Logging**: Strukturiertes Logging auf allen Ebenen
+### Network & Communication
+- **Async UDP Receiver**: Non-blocking position reception
+- **Circuit Breaker**: Prevents cascade failures on unreliable networks
+- **Exponential Backoff**: Intelligent retry strategy with jitter
+- **Network Statistics**: Packet tracking, error counting, latency monitoring
+- **Checksum Validation**: Full NMEA sentence validation and parsing
 
-## 📋 Voraussetzungen
+### Data Management
+- **CSV Storage**: Efficient append-mode position storage
+- **Date Range Filtering**: Query positions by time window
+- **Automatic Cleanup**: Remove records older than specified days
+- **Statistics Calculation**: Distance, speed, bounds, duration analysis
+- **Thread-Safe Model**: Concurrent observer pattern for updates
 
-- Python 3.8 oder höher
-- PyQt6 für GUI
-- Scipy für MAT-Dateien
-- Weitere Dependencies siehe `requirements.txt`
+### Monitoring & Observability
+- **Metrics Collection**: Min/max/avg/count tracking without external deps
+- **Timer Support**: Operation duration measurement
+- **Performance Counters**: System event counting
+- **JSON Export**: Metrics export for analysis
+- **Live Summary**: Formatted metrics display
 
-## 🔧 Installation
+### Logging
+- **Structured JSON Logging**: ELK Stack compatible
+- **Context Support**: Add contextual information to logs
+- **Log Aggregation**: Centralized log collection
+- **Multiple Handlers**: Console and file output
+- **CSV Export**: Export logs for analysis
 
-### 1. Repository klonen oder Dateien herunterladen
+### Map Visualization
+- **Provider Abstraction**: Support multiple tile servers
+- **Built-in Providers**: OpenStreetMap, Carto Dark
+- **Tile Caching**: Reduce network requests with LRU cache
+- **Async Loading**: Non-blocking map tile fetching
+- **Update Throttling**: Configurable map update thresholds
 
+### CLI Management
+- **Recording**: Capture GPS stream to CSV
+- **Analysis**: View statistics and bounds
+- **Filtering**: Extract date-range subsets
+- **Maintenance**: Cleanup old records
+- **Configuration**: Validate and display settings
+- **Data Inspection**: Browse position data
+
+## 📋 Requirements
+
+- Python 3.8+
+- PyQt6 for GUI
+- Pandas for CSV operations
+- Scipy for MAT file support
+- pynmea2 for NMEA parsing
+- Click for CLI tools
+- Pillow for image processing
+
+## 🚀 Installation
+
+### 1. Clone Repository
 ```bash
 git clone <repository-url>
 cd gps-position-system
 ```
 
-### 2. Virtuelle Umgebung erstellen (empfohlen)
-
+### 2. Create Virtual Environment (Recommended)
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# oder
+# or
 venv\Scripts\activate  # Windows
 ```
 
-### 3. Abhängigkeiten installieren
-
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Konfiguration anpassen
+### 4. Configure Application
+Edit `config.json` to match your environment:
 
-Kopieren und bearbeiten Sie `config.yaml`:
-
-```yaml
-network:
-  udp_address: "127.0.0.1"
-  udp_port: 19711
-  receive_port: 19710
-
-gps:
-  data_file: "data/AguasVivasGPSData.mat"
-  max_stored_positions: 1000
-
-map:
-  zoom_level: 13
-  update_threshold_km: 1.0
+```json
+{
+  "network": {
+    "udp_address": "127.0.0.1",
+    "udp_port": 19711,
+    "receive_port": 19710,
+    "timeout": 5.0
+  },
+  "gps": {
+    "data_file": "data/AguasVivasGPSData.mat",
+    "max_stored_positions": 1000
+  },
+  "map": {
+    "zoom_level": 13,
+    "update_threshold_km": 1.0
+  }
+}
 ```
 
-## 🎮 Verwendung
+## 🎮 Usage
 
-### GPS-Daten senden
-
+### Start GPS Sender
 ```bash
-python SendPosition_improved.py
+python SendPosition.py
 ```
 
-Startet den GPS-Sender, der Positionen aus der MAT-Datei als NMEA-Sätze sendet.
+Starts streaming GPS positions as NMEA RMC sentences to configured UDP address.
 
-**Funktionen:**
-- Lädt GPS-Daten aus MATLAB-Dateien
-- Konvertiert zu NMEA RMC-Sätzen
-- Sendet via UDP mit konfigurierbarem Intervall
-- Vollständige Fehlerprotokollierung
+**Features:**
+- Loads positions from MATLAB MAT files
+- Configurable emission interval
+- Full logging and error reporting
+- Signal-based position emission
 
-### GPS-Daten empfangen und visualisieren
-
+### Start GPS Receiver GUI
 ```bash
-python ReceivePosition_improved.py
+python ReceivePosition.py
 ```
 
-Startet die GUI-Anwendung zum Empfang und zur Visualisierung.
+Launches PyQt6 GUI with real-time visualization.
 
-**Funktionen:**
-- Empfängt und validiert NMEA-Daten
-- Echtzeit-Positionsplot
-- OpenStreetMap-Integration
-- Statistiken und Tracking-Info
-- Export zu Excel
-- Thread-sichere Updates
+**Features:**
+- Position reception and validation
+- Real-time plot display
+- OpenStreetMap integration
+- Statistics tracking
+- CSV export with append mode
+- Thread-safe updates
 
-### GUI-Bedienung
+### CLI Tools
 
-1. **Positionsanzeige**: Zeigt aktuelle Position auf Karte und im Plot
-2. **Statistiken**: Anzeige von empfangenen Positionen, Distanz, Geschwindigkeit
-3. **Save Data**: Speichert gesammelte Daten als Excel-Datei
-4. **Clear Data**: Löscht alle gespeicherten Positionen
-5. **Append Mode**: Checkbox zum Anhängen an bestehende Dateien
+#### Record GPS Data
+```bash
+python gps_cli.py record --duration 300 --port 19710 --output session.csv
+```
 
-## 🏗️ Architektur
+Record GPS stream to CSV file for specified duration.
 
-### Komponentenübersicht
+#### View Statistics
+```bash
+python gps_cli.py stats --file session.csv
+```
+
+Display dataset statistics: record count, time span, bounds, averages.
+
+#### Filter by Date
+```bash
+python gps_cli.py filter-by-date \
+  --file session.csv \
+  --start "2024-01-01 00:00:00" \
+  --end "2024-01-31 23:59:59" \
+  --output filtered.csv
+```
+
+Extract position records within date range.
+
+#### View Data
+```bash
+python gps_cli.py view --file session.csv --lines 20
+```
+
+Display sample positions from file.
+
+#### Cleanup Old Records
+```bash
+python gps_cli.py cleanup --file session.csv --days 30 --confirm
+```
+
+Remove records older than N days.
+
+#### Send NMEA Position
+```bash
+python gps_cli.py send --lat 48.1234 --lon 11.5678 --speed 5.0
+```
+
+Transmit single NMEA position sentence.
+
+#### Validate Configuration
+```bash
+python gps_cli.py validate-config --config config.json
+```
+
+Check configuration validity and display settings.
+
+## 📁 Project Structure
 
 ```
 gps-position-system/
-├── config.yaml                    # Zentrale Konfiguration
-├── config_loader.py              # Konfigurationsverwaltung
-├── coordinates.py                # Koordinatensystem
-├── nmea_validator.py            # NMEA-Validierung
-├── gps_data_model.py           # Datenmodell (Model)
-├── gps_data_mat_play_improved.py  # MAT-Datei-Player
-├── SendPosition_improved.py    # GPS-Sender
-├── ReceivePosition_improved.py # GPS-Empfänger (View + Controller)
-├── test_gps_system.py         # Test-Suite
-├── requirements.txt           # Python-Abhängigkeiten
-└── README.md                 # Diese Datei
+├── config.json                          # Configuration file
+├── config_loader.py                     # Configuration management
+├── coordinates.py                       # Coordinate system (NMEA, decimal, DMS)
+├── nmea_validator.py                    # NMEA parsing & validation
+├── gps_data_model.py                    # Data model (MVC)
+├── gps_data_csv_storage.py              # CSV storage operations
+├── gps_data_mat_play.py                 # MATLAB file playback
+├── gps_network_async.py                 # Async UDP I/O
+├── gps_network_resilience.py            # Circuit breaker & retry logic
+├── gps_metrics.py                       # Performance metrics collection
+├── gps_structured_logging.py            # JSON structured logging
+├── gps_map_providers.py                 # Map provider abstraction
+├── gps_cli.py                           # CLI management tool
+├── SendPosition.py                      # GPS sender application
+├── ReceivePosition.py                   # GPS receiver GUI application
+├── record_gps_data.py                   # Example: async recording
+├── test_gps_system.py                   # Test suite
+├── helper_maps.py                       # Map tile downloading
+├── helper_map_ned.py                    # NED coordinate conversions
+├── requirements.txt                     # Python dependencies
+└── README.md                            # This file
 ```
 
-### MVC-Pattern
+## 🏗️ Architecture
+
+### MVC Pattern
 
 **Model** (`gps_data_model.py`):
-- `GPSDataModel`: Thread-sichere Datenverwaltung
-- `GPSPosition`: Einzelne Position mit Metadaten
-- `GPSTrack`: Track-Analyse und Statistiken
-- Observer-Pattern für Änderungsbenachrichtigungen
+- `GPSDataModel`: Thread-safe position storage with observer pattern
+- `GPSPosition`: Single position record with metadata
+- `GPSTrack`: Track analysis and statistics
 
-**View** (`ReceivePosition_improved.py`):
-- `GPSPlotView`: Visualisierung im Plot
-- `MapManager`: Kartendarstellung
-- Qt-Widgets für UI-Elemente
+**View** (`ReceivePosition.py`):
+- `GPSPlotView`: Real-time position plotting
+- `MapManager`: Async map tile management
+- Qt widgets for UI elements
 
-**Controller** (`ReceivePosition_improved.py`):
-- `ReceiveNmea`: Hauptcontroller
-- Event-Handling und Datenfluss
-- Signal/Slot-Kommunikation
+**Controller** (`ReceivePosition.py`):
+- `ReceiveNmea`: Main event controller
+- Signal/slot communication with Qt
+- Data flow orchestration
 
-## 🧪 Tests ausführen
+### Network Stack
 
-### Alle Tests
+**Async Layer** (`gps_network_async.py`):
+- Non-blocking UDP reception with asyncio
+- Callback-based position handling
+- Network statistics tracking
 
+**Resilience Layer** (`gps_network_resilience.py`):
+- Circuit breaker (CLOSED → OPEN → HALF_OPEN)
+- Exponential backoff with jitter
+- Automatic failure detection
+
+### Data Pipeline
+
+```
+MATLAB File → PlayGPSMat → NMEA Generator → UDP Send
+                                ↓
+                          Network (UDP)
+                                ↓
+                        AsyncNMEAReceiver
+                                ↓
+                          NMEAValidator
+                                ↓
+                        GPSDataModel
+                                ↓
+                    GPSDataCSVStorage (Async)
+```
+
+## 📊 Monitoring
+
+### Metrics Collection
+
+```python
+from gps_metrics import get_metrics
+
+metrics = get_metrics()
+metrics.record_metric('temperature', 23.5, 'C')
+metrics.increment_counter('positions_processed')
+
+start = metrics.start_timer('operation')
+# ... do work ...
+elapsed = metrics.stop_timer('operation', start)
+
+print(metrics.get_summary())
+```
+
+### JSON Export
+
+```python
+json_data = metrics.export_json()
+```
+
+## 📝 Configuration
+
+### network section
+- `udp_address`: Destination IP address
+- `broadcast_address`: Broadcast address
+- `udp_port`: Send port (19711)
+- `receive_port`: Receive port (19710)
+- `timeout`: Socket timeout in seconds
+
+### gps section
+- `data_file`: Path to MATLAB GPS data file
+- `start_timeout`: Delay before sending starts
+- `time_between_positions`: Interval between positions
+- `max_stored_positions`: Maximum in-memory positions
+
+### map section
+- `delta_lat`: Map vertical extent in degrees
+- `delta_lon`: Map horizontal extent in degrees
+- `zoom_level`: OSM zoom level (0-19)
+- `update_threshold_km`: Minimum distance to trigger map update
+- `cache_size`: Maximum cached tiles
+
+### ui section
+- `window_title`: GUI window title
+- `map_widget_width`: Map display width
+- `map_widget_height`: Map display height
+- `plot_update_interval`: Plot refresh rate (ms)
+
+### logging section
+- `level`: Log level (DEBUG, INFO, WARNING, ERROR)
+- `format`: Log message format string
+- `file`: Log file path
+- `max_bytes`: Max log file size before rotation
+- `backup_count`: Number of backup log files
+
+## 🧪 Testing
+
+### Run All Tests
 ```bash
 pytest test_gps_system.py -v
 ```
 
-### Mit Coverage-Report
-
+### With Coverage
 ```bash
 pytest test_gps_system.py --cov=. --cov-report=html
 ```
 
-### Einzelne Testklassen
-
+### Specific Test Class
 ```bash
 pytest test_gps_system.py::TestCoordinates -v
-pytest test_gps_system.py::TestNMEAValidator -v
-pytest test_gps_system.py::TestGPSDataModel -v
 ```
 
-## 📊 Code-Qualität
+### Coverage Targets
+- Coordinates: 100%
+- NMEA Validator: 95%+
+- GPS Data Model: 90%+
+- CSV Storage: 85%+
 
-### Linting
+## 🛠️ Code Quality
 
+### Formatting
 ```bash
-# Flake8
-flake8 *.py --max-line-length=100
-
-# Pylint
-pylint *.py
-
-# MyPy (Type Checking)
-mypy *.py
-```
-
-### Formatierung
-
-```bash
-# Black formatter
 black *.py
 ```
 
-## 🔍 API-Dokumentation
+### Linting
+```bash
+flake8 *.py --max-line-length=100
+pylint *.py
+```
 
-### Coordinates-Modul
+### Type Checking
+```bash
+mypy *.py
+```
 
+## 📚 API Examples
+
+### Coordinate System
 ```python
 from coordinates import Coordinate, Position
 
-# Koordinate erstellen
-lat = Coordinate(48.1234, 'N')
-lon = Coordinate(11.5678, 'E')
-
-# Position erstellen
+# Create from decimal degrees
 pos = Position.from_decimal(48.1234, 11.5678, 100.0)
 
-# Distanz berechnen
-pos1 = Position.from_decimal(48.0, 11.0)
-pos2 = Position.from_decimal(48.1, 11.0)
-distance = pos1.distance_to(pos2)  # in km
+# Convert to different formats
+dms = pos.latitude.degrees_minutes_seconds
+nmea_str = pos.latitude.to_nmea_string()
 
-# NMEA-Format
-nmea_lat = Coordinate.from_nmea('4807.404', 'N')
-print(nmea_lat.decimal_degrees)  # 48.1234
+# Calculate distance
+distance_km = pos.distance_to(other_position)
 ```
 
-### NMEA-Validator
-
+### NMEA Validation
 ```python
 from nmea_validator import NMEAValidator, NMEAGenerator
 
-# NMEA validieren
-nmea_str = "$GPRMC,123456.00,A,4807.404,N,01131.324,E,0.0,0.0,191124,,,A*6C"
-is_valid = NMEAValidator.is_valid_nmea(nmea_str)
+# Validate NMEA sentence
+is_valid = NMEAValidator.is_valid_nmea(nmea_string)
 
-# NMEA parsen
-parsed = NMEAValidator.safe_parse(nmea_str)
+# Parse safely
+parsed = NMEAValidator.safe_parse(nmea_string)
 if parsed:
     info = NMEAValidator.extract_position_info(parsed)
-    print(info['latitude'], info['longitude'])
+    print(f"Lat: {info['latitude']}, Lon: {info['longitude']}")
 
-# NMEA generieren
+# Generate NMEA
 nmea = NMEAGenerator.generate_rmc(48.1234, 11.5678)
 ```
 
-### GPS-Datenmodell
-
+### GPS Data Model
 ```python
 from gps_data_model import GPSDataModel, GPSPosition
 
-# Model erstellen
 model = GPSDataModel(max_positions=1000)
 
-# Observer registrieren
-def on_new_position(pos):
-    print(f"New: {pos.latitude}, {pos.longitude}")
+# Register observer
+def on_position(pos):
+    print(f"New position: {pos.latitude}, {pos.longitude}")
 
-model.register_observer(on_new_position)
+model.register_observer(on_position)
 
-# Position hinzufügen
-pos = GPSPosition(48.1234, 11.5678, 100.0)
-model.add_position(pos)
+# Add position
+position = GPSPosition(48.1234, 11.5678, 100.0)
+model.add_position(position)
 
-# Statistiken abrufen
+# Get statistics
 stats = model.get_statistics()
-print(f"Total distance: {stats['total_distance']:.2f} m")
+print(f"Total distance: {stats['total_distance']} m")
 ```
 
-## ⚙️ Konfiguration
+### CSV Storage
+```python
+from gps_data_csv_storage import GPSDataCSVStorage
 
-### Netzwerk-Einstellungen
+storage = GPSDataCSVStorage(output_dir="data")
 
-```yaml
-network:
-  udp_address: "127.0.0.1"     # Ziel-IP-Adresse
-  broadcast_address: "172.16.79.255"  # Broadcast-Adresse
-  udp_port: 19711               # Ziel-Port
-  receive_port: 19710           # Empfangs-Port
-  timeout: 5.0                  # Timeout in Sekunden
+# Save positions
+filepath = storage.save_positions(positions, "track.csv")
+
+# Load positions
+loaded = storage.load_positions("track.csv")
+
+# Get statistics
+stats = storage.get_statistics("track.csv")
+
+# Filter by date
+filtered = storage.filter_by_date_range(
+    "track.csv", 
+    start_date, 
+    end_date
+)
 ```
 
-### GPS-Einstellungen
+### Async Network
+```python
+from gps_network_async import AsyncNMEAReceiver
 
-```yaml
-gps:
-  data_file: "data/AguasVivasGPSData.mat"
-  start_timeout: 5              # Startverzögerung
-  time_between_positions: 1.0   # Intervall zwischen Positionen
-  max_stored_positions: 1000    # Max. gespeicherte Positionen
+receiver = AsyncNMEAReceiver(host="0.0.0.0", port=19710)
+
+def on_nmea(nmea_str, addr):
+    print(f"Received from {addr}: {nmea_str}")
+
+receiver.register_callback(on_nmea)
+
+# Start receiving (in async context)
+await receiver.start()
 ```
 
-### Karten-Einstellungen
+## 🐛 Troubleshooting
 
-```yaml
-map:
-  delta_lat: 0.075             # Kartenausschnitt Breite
-  delta_lon: 0.15              # Kartenausschnitt Länge
-  zoom_level: 13               # OSM Zoom-Level (0-19)
-  update_threshold_km: 1.0     # Min. Distanz für Update
-  cache_size: 100              # Anzahl gecachter Karten
-```
-
-### Logging-Einstellungen
-
-```yaml
-logging:
-  level: "INFO"                # DEBUG, INFO, WARNING, ERROR
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file: "gps_system.log"
-  max_bytes: 10485760          # 10MB
-  backup_count: 5
-```
-
-## 🐛 Fehlerbehebung
-
-### Problem: "ModuleNotFoundError"
-
-**Lösung**: Stellen Sie sicher, dass alle Abhängigkeiten installiert sind:
+### Issue: "ModuleNotFoundError"
+**Solution:** Install all dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Problem: UDP-Pakete kommen nicht an
+### Issue: UDP packets not received
+**Solution:**
+1. Check firewall rules
+2. Verify IP and port in config.json
+3. Test with loopback address first (127.0.0.1)
 
-**Lösung**: 
-1. Prüfen Sie Firewall-Einstellungen
-2. Verifizieren Sie IP-Adresse und Port in `config.yaml`
-3. Testen Sie mit Loopback (127.0.0.1) zuerst
+### Issue: Maps not loading
+**Solution:**
+1. Check internet connectivity
+2. OSM servers may be temporarily unavailable
+3. Verify User-Agent headers
 
-### Problem: Karten werden nicht geladen
+### Issue: GUI freezes
+**Solution:**
+1. Reduce `max_stored_positions` in config
+2. Increase `update_threshold_km` for maps
+3. Check log files for errors
 
-**Lösung**:
-1. Prüfen Sie Internetverbindung
-2. OSM-Server könnten temporär überlastet sein
-3. User-Agent in `helper_maps.py` überprüfen
+## ⚡ Performance Tips
 
-### Problem: GUI friert ein
+1. **Limit Stored Positions**: Set `max_stored_positions: 500` for large datasets
+2. **Increase Map Update Threshold**: Use `update_threshold_km: 2.0` to reduce requests
+3. **Adjust Plot Update Rate**: Increase `plot_update_interval` for less frequent updates
+4. **Disable Debug Logging**: Set `level: INFO` instead of `DEBUG`
+5. **Enable Tile Caching**: Configure `cache_size` appropriately
 
-**Lösung**: Das sollte mit der neuen Version nicht mehr passieren (Thread-Sicherheit). Falls doch:
-1. Prüfen Sie Log-Dateien auf Fehler
-2. Reduzieren Sie `max_stored_positions`
-3. Erhöhen Sie `update_threshold_km`
+## 📦 Dependencies
 
-## 📈 Performance-Tipps
+See `requirements.txt` for complete list. Key dependencies:
 
-1. **Begrenzen Sie gespeicherte Positionen**: `max_stored_positions: 500`
-2. **Erhöhen Sie Karten-Update-Schwelle**: `update_threshold_km: 2.0`
-3. **Reduzieren Sie Plot-Updates**: Längeres Intervall in `time_between_positions`
-4. **Deaktivieren Sie Debug-Logging**: `level: "INFO"` statt `"DEBUG"`
+- **PyQt6** - GUI framework
+- **Pandas** - CSV operations
+- **Scipy** - MATLAB file support
+- **pynmea2** - NMEA parsing
+- **Click** - CLI framework
+- **Pillow** - Image processing
+- **Requests** - HTTP for map tiles
 
-## 🤝 Beitragen
+## 📄 License
 
-Verbesserungen sind willkommen! Bitte:
+- MIT License 
 
-1. Fork das Repository
-2. Feature-Branch erstellen (`git checkout -b feature/AmazingFeature`)
-3. Tests für neue Features hinzufügen
-4. Code formatieren (`black *.py`)
-5. Commit mit aussagekräftiger Nachricht
-6. Push zum Branch
-7. Pull Request öffnen
+## 🤝 Contributing
 
-## 📝 Lizenz
+Contributions welcome! Please:
 
-Dieses Projekt steht unter der MIT-Lizenz. Siehe LICENSE-Datei für Details.
-
-## 👏 Credits
-
-- NMEA-Parsing: pynmea2
-- Kartendaten: OpenStreetMap Contributors
-- GUI: PyQt6 Framework
+1. Add tests for new features
+2. Follow PEP 8 style guide
+3. Use type hints
+4. Update documentation
 
 ## 📞 Support
 
-Bei Fragen oder Problemen:
-- GitHub Issues: [Link zum Repository]
-- E-Mail: [Ihre E-Mail]
-- Dokumentation: Siehe Code-Docstrings
+For issues or questions:
+1. Check this README
+2. Review test examples in `test_gps_system.py`
+3. Check log files for error details
+4. Review code docstrings
 
-## 🔄 Änderungsprotokoll
+## 🗺️ Roadmap
 
-### Version 2.0.0 (Aktuell)
-
-#### ✨ Neue Features
-- MVC-Architektur implementiert
-- Einheitliches Koordinatensystem
-- NMEA-Validierung mit Checksummen
-- Thread-sichere GUI-Updates
-- Konfigurationsverwaltung
-- Umfassende Test-Suite
-- Strukturiertes Logging
-
-#### 🔧 Verbesserungen
-- Performance-Optimierungen
-- Intelligentes Karten-Caching
-- Observer-Pattern für Datenmodell
-- Bessere Fehlerbehandlung
-- Dokumentation vervollständigt
-
-#### 🐛 Bugfixes
-- Thread-Sicherheitsprobleme behoben
-- NMEA-Generierung korrigiert
-- Koordinaten-Konvertierung verbessert
-- Speicherlecks eliminiert
-
-### Version 1.0.0 (Original)
-- Basis-Funktionalität
-- UDP-Übertragung
-- Einfache GUI
-- MAT-Datei-Support
+Potential enhancements:
+- Real hardware GPS receiver support
+- Multi-user session management
+- Track comparison and analysis
